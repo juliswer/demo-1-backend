@@ -1,0 +1,52 @@
+service: stackit-sdk-api-nestjs
+
+useDotenv: true
+
+plugins:
+  - serverless-plugin-common-excludes
+  - serverless-plugin-include-dependencies
+  - serverless-plugin-optimize
+  - serverless-offline
+  - serverless-plugin-package-size
+  - serverless-plugin-warmup
+
+provider:
+  name: aws
+  runtime: nodejs18.x
+  environment:
+    DB_TYPE: ${param:DB_TYPE}
+    DB_HOST: ${param:DB_HOST}
+    DB_PORT: ${param:DB_PORT}
+    DB_USERNAME: ${param:DB_USERNAME }
+    DB_PASSWORD: ${param:DB_PASSWORD }
+    DB_NAME: ${param:DB_NAME }
+    POSTGRES_SYNC: ${param:POSTGRES_SYNC}
+    JWT_SECRET: ${param:JWT_SECRET}
+
+functions:
+  main:
+    handler: dist/serverless.handler
+    events:
+      - http:
+          method: ANY
+          path: /{any+}
+
+custom:
+  warmup:
+    officeHoursWarmer:
+      enabled: true
+      events:
+        - schedule: cron(0/5 8-17 ? * MON-FRI *)
+      concurrency: 10
+      verbose: true
+      logRetentionInDays: 14
+    outOfOfficeHoursWarmer:
+      enabled: true
+      events:
+        - schedule: cron(0/5 0-7 ? * MON-FRI *)
+        - schedule: cron(0/5 18-23 ? * MON-FRI *)
+        - schedule: cron(0/5 * ? * SAT-SUN *)
+      concurrency: 1
+      verbose: false
+    testWarmer:
+      enabled: false
